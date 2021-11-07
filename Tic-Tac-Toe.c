@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
-#include <Windows.h>
 
 #define SIZE 9
 #define AI_player 'X'
@@ -15,12 +14,11 @@ void player_move(char *game_mark, char computer_mark, char player_mark, int cell
 void check_cells(int cells, char *game_mark, int *is_occupied);
 int detect_win(char *game_mark, char computer_mark, char player_mark);
 int is_win(int *computer_score, int *player_score);
-int minimax(char *game_mark, int cells, int *c_move, int is_Min, int alpha, int beta);
+int minimax(char *game_mark, int cells, int *c_move, int is_Min);
 int best_value(int arr[], int size, int is_Max);
 
 
 int main(void){
-	printf("-----------Tic-Tac-Toe Program----------\n\n");
 	instruction();
 
 	// randomize the first player
@@ -64,27 +62,24 @@ int main(void){
 }
 
 void instruction(){
+
 	char instruction_mark[9];
 
-	printf("*****INSTRUCTION*****");
+	printf("-----------Tic-Tac-Toe Program----------\n\n");
+	printf("*****INSTRUCTION*****\n");
 	printf("This program has two difficulty mode. ( Easy mode and diffcult mode )\n");
-	Sleep(1);
 	printf("When playing the game, enter the cell number to place your mark.\n");
-	Sleep(2);
 
 	for (int i=0; i<SIZE; i++)
-		instruction_mark[i] = i;
+		instruction_mark[i] = (i+1) + '0';
 
 	printf("Below shows the cell numbers.\n");
 	generate_map(instruction_mark);
 
-	Sleep(5);
 	printf("After entering the number, press ENTER to proceed.\n");
 	printf("*****NOTE*****\n");
-	Sleep(1);
-	printf("First to play is randomized in easy mode.\n");
-	Sleep(1);
-	printf("But user will play first in difficult mode.\n");
+	printf("In Easy mode, first to play is randomized.\n");
+	printf("In Difficult mode, player will always start first.\n");
 }
 
 void generate_map(char *game_mark){
@@ -100,16 +95,18 @@ void generate_map(char *game_mark){
 
 void computer_move(char *game_mark, char computer_mark, char player_mark, int cells, int AI){
 	
-	if(cells == 0)
+	if(cells == 0){
+		printf("The game has ended!\n");
 		exit(0);
+	}
 
 	printf("It is the computer's turn now.\n");
 
-	if(AI && cells == 4){
+	if(AI){
 		char *copy_mark = (char *)malloc(SIZE);
 		memcpy(copy_mark,game_mark,SIZE);
 		int c_move = -1;
-		minimax(copy_mark, cells, &c_move, 0, -1000, 1000);
+		minimax(copy_mark, cells, &c_move, 0);
 		*(game_mark + c_move) = computer_mark;
 	}
 
@@ -127,6 +124,7 @@ void computer_move(char *game_mark, char computer_mark, char player_mark, int ce
 
 	generate_map(game_mark);
 	if(detect_win(game_mark, computer_mark, player_mark) == -1){
+		printf("The computer has won the game!\n");
 		exit(0);
 	}
 
@@ -136,8 +134,10 @@ void computer_move(char *game_mark, char computer_mark, char player_mark, int ce
 
 void player_move(char *game_mark, char computer_mark, char player_mark, int cells, int AI){
 
-	if (cells == 0)
+	if (cells == 0){
+		printf("The game has ended!\n");
 		exit(0);
+	}
 
 	int is_occupied[cells], player_cell;
 	check_cells(cells, game_mark, is_occupied);
@@ -159,8 +159,11 @@ void player_move(char *game_mark, char computer_mark, char player_mark, int cell
 	}	
 	
 	generate_map(game_mark);
-	if(detect_win(game_mark, computer_mark, player_mark))
+	if(detect_win(game_mark, computer_mark, player_mark)){
+		printf("The player has won the game!\n");
 		exit(0);
+	}
+
 	else
 		computer_move(game_mark, computer_mark, player_mark, cells-1, AI);
 }
@@ -266,7 +269,7 @@ int is_win(int *computer_score, int *player_score){
     }
 }
 
-int minimax(char *game_mark, int cells, int *c_move, int is_Max, int alpha, int beta){
+int minimax(char *game_mark, int cells, int *c_move, int is_Max){
 
 	int is_occupied[cells];
 	check_cells(cells, game_mark, is_occupied);
@@ -288,35 +291,23 @@ int minimax(char *game_mark, int cells, int *c_move, int is_Max, int alpha, int 
 		// choose first possible move and update game and vertically extend the nodes (depth-first search)
 		if(is_Max){
 			*(ptr + is_occupied[i]) = AI_player;
-			printf("Max game %d at depth %d\n", i, cells);
-            generate_map(ptr);
-			value[i] = minimax(ptr, cells-1, c_move, 0, alpha, beta);
-			if(beta <= alpha)
-				break;
+			value[i] = minimax(ptr, cells-1, c_move, 0);
 		}
 
 		else{
 			*(ptr + is_occupied[i]) = AI_computer;
-			printf("Min game %d at depth %d\n", i, cells);
-            generate_map(ptr);
-			value[i] = minimax(ptr, cells-1, c_move, 1, alpha, beta);
-			if (beta <= alpha)
-				break;
+			value[i] = minimax(ptr, cells-1, c_move, 1);
 		}
 	}
 
 	if(is_Max){
 		int index = best_value(value, cells, 0);
-		alpha = value[index];
-		printf("alpha %d in MAX game at depth %d\n", alpha, cells);
 		return value[index];
 	}
 
 	else{
 		int index = best_value(value, cells, 1);
 		*c_move = is_occupied[index];
-		beta = value[index];
-		printf("beta %d in Min game at depth %d\n", beta, cells);
 		return value[index];
 	}	
 }
